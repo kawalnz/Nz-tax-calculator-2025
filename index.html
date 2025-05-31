@@ -1,88 +1,63 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>NZ Tax Calculator 2024-2025</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NZ Tax Refund Calculator</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 2em;
-      max-width: 600px;
-      margin: auto;
-    }
-    label {
-      display: block;
-      margin: 0.5em 0 0.2em;
-    }
-    input[type="number"] {
-      width: 100%;
-      padding: 0.5em;
-    }
-    .output {
-      margin-top: 1.5em;
-      font-weight: bold;
-    }
+    body { font-family: Arial, sans-serif; margin: 40px; background: #f9f9f9; }
+    h2 { color: #333; }
+    label { display: block; margin-top: 10px; }
+    input[type="number"] { width: 100%; padding: 8px; margin-top: 5px; }
+    button { margin-top: 20px; padding: 10px 20px; font-size: 16px; cursor: pointer; }
+    .result { margin-top: 20px; font-weight: bold; }
+    .container { max-width: 500px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
   </style>
 </head>
 <body>
-  <h2>NZ Tax Calculator (2024–2025)</h2>
-  <label for="income">Total Income ($):</label>
-  <input type="number" id="income" placeholder="Enter your income" />
+  <div class="container">
+    <h2>NZ Tax Refund Calculator (2024–2025)</h2>
+    <label for="income">Total Taxable Income ($):</label>
+    <input type="number" id="income" step="0.01"><label for="taxPaid">Total Tax Paid (PAYE + credits) ($):</label>
+<input type="number" id="taxPaid" step="0.01">
 
-  <label for="taxPaid">Tax Paid ($):</label>
-  <input type="number" id="taxPaid" placeholder="Enter tax paid" />
+<label for="expenses">Claimable Expenses (e.g. disability premiums) ($):</label>
+<input type="number" id="expenses" step="0.01">
 
-  <div class="output" id="results"></div>
+<button onclick="calculateRefund()">Calculate Refund</button>
 
-  <script>
-    const incomeInput = document.getElementById('income');
-    const taxPaidInput = document.getElementById('taxPaid');
-    const results = document.getElementById('results');
+<div class="result" id="result"></div>
 
-    const brackets = [
-      { max: 14000, rate: 0.105 },
-      { max: 15600, rate: 0.1282 },
-      { max: 48000, rate: 0.175 },
-      { max: 53500, rate: 0.2164 },
-      { max: 70000, rate: 0.30 },
-      { max: 78100, rate: 0.3099 },
-      { max: 180000, rate: 0.33 },
-      { max: Infinity, rate: 0.39 }
-    ];
+  </div>  <script>
+    function calculateRefund() {
+      const income = parseFloat(document.getElementById('income').value) || 0;
+      const taxPaid = parseFloat(document.getElementById('taxPaid').value) || 0;
+      const expenses = parseFloat(document.getElementById('expenses').value) || 0;
 
-    function calculateTax(income) {
-      let tax = 0;
-      let lastMax = 0;
+      const taxableIncome = income - expenses;
+      let taxOwed = 0;
+
+      // NZ tax brackets for 2024-25
+      const brackets = [
+        { limit: 14000, rate: 0.105 },
+        { limit: 48000, rate: 0.175 },
+        { limit: 70000, rate: 0.30 },
+        { limit: 180000, rate: 0.33 },
+        { limit: Infinity, rate: 0.39 }
+      ];
+
+      let remaining = taxableIncome;
+      let lastLimit = 0;
+
       for (const bracket of brackets) {
-        if (income > bracket.max) {
-          tax += (bracket.max - lastMax) * bracket.rate;
-          lastMax = bracket.max;
-        } else {
-          tax += (income - lastMax) * bracket.rate;
-          break;
-        }
+        if (remaining <= 0) break;
+        const amountInBracket = Math.min(remaining, bracket.limit - lastLimit);
+        taxOwed += amountInBracket * bracket.rate;
+        remaining -= amountInBracket;
+        lastLimit = bracket.limit;
       }
-      return tax;
+
+      const refund = taxPaid - taxOwed;
+      document.getElementById('result').innerText = `Estimated Refund or Tax to Pay: $${refund.toFixed(2)} (${refund >= 0 ? 'Refund' : 'Owing'})`;
     }
-
-    function updateResults() {
-      const income = parseFloat(incomeInput.value);
-      const taxPaid = parseFloat(taxPaidInput.value);
-
-      if (!isNaN(income) && !isNaN(taxPaid)) {
-        const taxOwed = calculateTax(income);
-        const difference = taxPaid - taxOwed;
-        results.innerHTML = `
-          Tax Owed: $${taxOwed.toFixed(2)}<br>
-          ${difference >= 0 ? 'Refund' : 'Tax Owing'}: $${Math.abs(difference).toFixed(2)}
-        `;
-      } else {
-        results.textContent = '';
-      }
-    }
-
-    incomeInput.addEventListener('input', updateResults);
-    taxPaidInput.addEventListener('input', updateResults);
-  </script>
-</body>
+  </script></body>
 </html>
